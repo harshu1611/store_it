@@ -137,7 +137,7 @@
     @apply bg-brand hover:bg-brand-100 transition-all rounded-full button !important;
   }
   .flex-center {
-    @apply flex items-center justify-center h-screen;
+    @apply flex items-center justify-center;
   }
 
   /* =====  SHADCN OVERRIDES */
