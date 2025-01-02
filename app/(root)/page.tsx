@@ -7,7 +7,7 @@ import { Chart } from '@/components/Chart';
 import FormattedDateTime from '@/components/FormattedDateTime';
 import Thumbnail from '@/components/Thumbnail';
 import { Separator } from '@/components/ui/separator';
-import { getFiles, getTotalSpaceUsed } from '@/lib/actions/file.action';
+import { getFiles, getTotalSpaceUsed, isSharedFile } from '@/lib/actions/file.action';
 import { convertFileSize, getUsageSummary } from '@/lib/utils';
 
 const Dashboard = async () => {
@@ -63,7 +63,7 @@ const Dashboard = async () => {
         <h2 className="h3 xl:h2 text-light-100">Recent files uploaded</h2>
         {files.documents.length > 0 ? (
           <ul className="mt-5 flex flex-col gap-5">
-            {files.documents.map((file: Models.Document) => (
+            {files.documents.map(async(file: Models.Document) => (
               <Link
                 href={file.url}
                 target="_blank"
@@ -84,7 +84,7 @@ const Dashboard = async () => {
                       className="caption"
                     />
                   </div>
-                  <ActionDropdown file={file} />
+                  <ActionDropdown file={file} shared={await isSharedFile({file})}/>
                 </div>
               </Link>
             ))}

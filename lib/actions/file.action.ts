@@ -8,6 +8,8 @@ import { ID, Models, Query } from "node-appwrite";
 import { constructFileUrl, getFileType, parseStringify } from "../utils";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "./user.actions";
+import { parse } from "path";
+const nodemailer = require("nodemailer");
 
 export const uploadFile = async ({
   file,
@@ -158,7 +160,10 @@ export const updatedFileUsers = async ({
         users: emails,
       }
     );
+    if(updatedFile){
 
+      sendEmail(emails, updatedFile)
+    }
     revalidatePath(path);
     return parseStringify(updatedFile);
   } catch (error) {
@@ -166,15 +171,15 @@ export const updatedFileUsers = async ({
   }
 };
 
-const isSharedFile = async ({ file }: { file: Models.Document }) => {
+export const isSharedFile = async ({ file }: { file: Models.Document }) => {
   try {
     const currentUser = await getCurrentUser();
-
-    if (file.ownerId === currentUser.$id) {
-      return false;
+    // console.log(currentUser,file);
+    if (file.ownerId.accountId === currentUser.accountId) {
+      return parseStringify({ isShared: false });
     }
 
-    return true;
+    return parseStringify({ isShared: true });
   } catch (error) {
     throw error;
   }
@@ -241,4 +246,35 @@ export async function getTotalSpaceUsed() {
   } catch (error) {
     throw error;
   }
+}
+
+const sendEmail=(emails:string[],updatedFile:any)=>{
+  const transporter = nodemailer.createTransport({
+    service:"Gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // true for port 465, false for other ports
+    auth:{
+        user: process.env.NEXT_PUBLIC_SMTP_USER_EMAIL,
+        pass:process.env.NEXT_PUBLIC_SMTP_USER_PASS
+    }
+  });
+
+  emails.forEach((email)=>{
+    const mailOptions = {
+      from: process.env.NEXT_PUBLIC_SMTP_USER_EMAIL,
+      to: email,
+      subject: `File shared in StoreIt by ${updatedFile.ownerId.fullName}`,
+      text: `File ${updatedFile.name} has been shared with you by ${updatedFile.ownerId.fullName}. You can access the file at StoreIT dashboard. `,
+    };
+  
+   transporter.sendMail(mailOptions,(error:any,info:any)=>{
+      if (error) {
+          console.error("Error sending email: ", error);
+        } else {
+          console.log("Email sent: ", info.response);
+        }
+   })
+  })
+  
 }

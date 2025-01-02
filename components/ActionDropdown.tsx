@@ -25,13 +25,25 @@ import Link from "next/link";
 import { constructDownloadUrl } from "@/lib/utils";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { deleteFile, renameFile, updatedFileUsers } from "@/lib/actions/file.action";
+import {
+  deleteFile,
+  isSharedFile,
+  renameFile,
+  updatedFileUsers,
+} from "@/lib/actions/file.action";
 import { usePathname } from "next/navigation";
 import { actions } from "react-table";
 import { FileDetails, ShareInput } from "./ActionsModalContent";
 // import { FileDetails } from "./ActionsModalContent";
 
-const ActionDropdown = ({ file }: { file: Models.Document }) => {
+const ActionDropdown = ({
+  file,
+  shared,
+}: {
+  file: Models.Document;
+  shared: any;
+}) => {
+  const { isShared } = shared;
   const path = usePathname();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropddownOpen, setIsDropdownOpen] = useState(false);
@@ -58,7 +70,12 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
       share: () => {
         updatedFileUsers({ fileId: file.$id, emails: shareEmails, path });
       },
-      delete:async()=>await deleteFile({fileId:file.$id,bucketFileId:file.bucketFileId,path})
+      delete: async () =>
+        await deleteFile({
+          fileId: file.$id,
+          bucketFileId: file.bucketFileId,
+          path,
+        }),
     };
     success = await actions[action.value as keyof typeof actions]();
 
@@ -93,50 +110,79 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
           <DialogTitle className="text-center text-light-100">
             {label}
           </DialogTitle>
-          {value === "rename" && (
-            <Input
-              type="text"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-              }}
-            />
-          )}
+          {value === "rename" &&
+            (!isShared ? (
+              <Input
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
+              />
+            ) : (
+              <p className="text-center">
+                Only Owner (
+                <span className="text-brand-100">{file.ownerId.fullName}</span>)
+                can edit the file
+              </p>
+            ))}
           {value === "details" && <FileDetails file={file} />}
 
-          {value === "share" && (
-            <ShareInput
-              file={file}
-              onInputChange={setShareEmails}
-              onRemove={handleRemoveUser}
-            />
-          )}
+          {value === "share" &&
+            (!isShared ? (
+              <ShareInput
+                file={file}
+                onInputChange={setShareEmails}
+                onRemove={handleRemoveUser}
+              />
+            ) : (
+              <p className="text-center">
+                Only Owner (
+                <span className="text-brand-100">{file.ownerId.fullName}</span>)
+                can edit the file
+              </p>
+            ))}
 
-          {value === "delete" && (
-            <p className="delete-confirmation">
-              Are you sure you want to delete {` `}{" "}
-              <span className="delete-file-name">{file.name}</span>?
-            </p>
-          )}
+          {value === "delete" &&
+            (!isShared ? (
+              <p className="delete-confirmation">
+                Are you sure you want to delete {` `}{" "}
+                <span className="delete-file-name">{file.name}</span>?
+              </p>
+            ) : (
+              <p className="text-center">
+                Only Owner (
+                <span className="text-brand-100">{file.ownerId.fullName}</span>)
+                can edit the file
+              </p>
+            ))}
         </DialogHeader>
-        {["rename", "delete", "share"].includes(value) && (
-          <DialogFooter className="flex flex-col gap-3 md:flex-row">
+        {["rename", "delete", "share"].includes(value) ? (
+          isShared ? (
             <Button onClick={closeAllModals} className="modal-cancel-button">
               Cancel
             </Button>
-            <Button onClick={handleAction} className="modal-submit-button">
-              <p className="capitalize">{value}</p>
-              {isLoading && (
-                <Image
-                  src="/assets/icons/loader.svg"
-                  alt="loader"
-                  width={24}
-                  height={24}
-                  className="animate-spin"
-                />
-              )}
-            </Button>
-          </DialogFooter>
+          ) : (
+            <DialogFooter className="flex flex-col gap-3 md:flex-row">
+              <Button onClick={closeAllModals} className="modal-cancel-button">
+                Cancel
+              </Button>
+              <Button onClick={handleAction} className="modal-submit-button">
+                <p className="capitalize">{value}</p>
+                {isLoading && (
+                  <Image
+                    src="/assets/icons/loader.svg"
+                    alt="loader"
+                    width={24}
+                    height={24}
+                    className="animate-spin"
+                  />
+                )}
+              </Button>
+            </DialogFooter>
+          )
+        ) : (
+          ""
         )}
       </DialogContent>
     );
