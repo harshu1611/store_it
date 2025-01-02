@@ -32,7 +32,6 @@ import {
   updatedFileUsers,
 } from "@/lib/actions/file.action";
 import { usePathname } from "next/navigation";
-import { actions } from "react-table";
 import { FileDetails, ShareInput } from "./ActionsModalContent";
 // import { FileDetails } from "./ActionsModalContent";
 
